@@ -30,12 +30,23 @@ Deployment: Vercel + Supabase.
 - [x] Landing page with feature cards
 
 ## What Is In Progress
-Nothing — build complete. Pending: Supabase credentials + Vercel deployment.
+Deployment — waiting on Supabase credentials and Vercel setup.
+
+## What Has Been Completed (Post-Build)
+- [x] Comprehensive README.md written (arch decisions, setup, improvements, SM-2 explanation)
+- [x] `.env.example` committed
+- [x] Final secret scan — clean
+- [x] GitHub repo created: https://github.com/Krishna09Bhardwaj/smartdeck
+- [x] All 11 commits pushed to `origin/main`
 
 ## What Still Needs To Be Done
-- [ ] Fill in `.env.local` with real Supabase + Anthropic credentials
-- [ ] Run `supabase/schema.sql` in Supabase SQL Editor
-- [ ] Push to GitHub + deploy to Vercel
+- [ ] Run `supabase/schema.sql` in Supabase SQL Editor (user action)
+- [ ] Provide 3 Supabase env vars: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+- [ ] Provide ANTHROPIC_API_KEY
+- [ ] Fill `.env.local` with real credentials (for local dev)
+- [ ] Deploy to Vercel (can be done autonomously once credentials are provided)
+- [ ] Update README.md live URL placeholder after Vercel deploy
+- [ ] End-to-end test: signup → upload PDF → study → progress
 
 ## Key Decisions
 - Private decks only — no sharing
