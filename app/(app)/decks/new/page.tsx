@@ -37,15 +37,23 @@ export default function NewDeckPage() {
 
     try {
       const res = await fetch('/api/generate', { method: 'POST', body: form })
-      const data = await res.json()
+      let data: Record<string, string> = {}
+      try {
+        data = await res.json()
+      } catch {
+        const text = await res.text().catch(() => 'no body')
+        setError(`Server error (${res.status}): ${text.slice(0, 200)}`)
+        setStatus('error')
+        return
+      }
       if (!res.ok) {
-        setError(data.error ?? 'Something went wrong')
+        setError(data.error ?? `Error ${res.status}`)
         setStatus('error')
         return
       }
       router.push(`/decks/${data.deck_id}`)
-    } catch {
-      setError('Network error. Please try again.')
+    } catch (err) {
+      setError(`Request failed: ${err instanceof Error ? err.message : String(err)}`)
       setStatus('error')
     }
   }
