@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { extractTextFromPDF, truncateText, isTextExtractable } from '@/lib/pdf-parser'
 import { generateFlashcards } from '@/lib/claude'
 
 export const runtime = 'nodejs'
@@ -38,32 +37,15 @@ export async function POST(request: Request) {
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
 
-  let extractedText: string
-  try {
-    extractedText = await extractTextFromPDF(buffer)
-  } catch (e) {
-    console.error('PDF parse error:', e)
-    return NextResponse.json(
-      { error: `PDF parse failed: ${e instanceof Error ? e.message : String(e)}` },
-      { status: 422 }
-    )
-  }
-
-  if (!isTextExtractable(extractedText)) {
-    return NextResponse.json(
-      { error: 'Could not extract text from this PDF. It may be a scanned image. Please upload a text-based PDF.' },
-      { status: 422 }
-    )
-  }
-
-  const truncated = truncateText(extractedText)
-
   let cards: Array<{ question: string; answer: string }>
   try {
-    cards = await generateFlashcards(truncated)
+    cards = await generateFlashcards(buffer)
   } catch (e) {
-    console.error('Claude generation failed:', e)
-    return NextResponse.json({ error: 'AI generation failed. Please try again.' }, { status: 500 })
+    console.error('Gemini generation failed:', e)
+    return NextResponse.json(
+      { error: `AI generation failed: ${e instanceof Error ? e.message : String(e)}` },
+      { status: 500 }
+    )
   }
 
   const { data: deck, error: deckError } = await supabase
