@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { GeneratedCard } from '@/types'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' })
 
 const PROMPT = `You are a skilled educator creating flashcards from a student's study material. Generate exactly 15-25 high-quality flashcards. Each card must have a clear, specific question and a thorough but concise answer (2-4 sentences). Cover key concepts, definitions, relationships, and important examples. Avoid trivial or redundant cards. Return ONLY a valid JSON array with no markdown, no code fences, no extra text: [{"question": "...", "answer": "..."}, ...]`
 
