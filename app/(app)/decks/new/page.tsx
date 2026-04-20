@@ -58,7 +58,7 @@ export default function NewDeckPage() {
         <CardHeader>
           <CardTitle>Upload your study material</CardTitle>
           <CardDescription>
-            Claude AI will generate 15–25 high-quality flashcards from your PDF.
+            Gemini AI will generate 15–25 high-quality flashcards from your PDF.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -101,7 +101,7 @@ export default function NewDeckPage() {
               <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                 <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                 <p className="text-sm text-blue-700">
-                  Claude is generating your flashcards… (this takes ~15 seconds)
+                  Gemini is generating your flashcards… (this takes ~15 seconds)
                 </p>
               </div>
             )}

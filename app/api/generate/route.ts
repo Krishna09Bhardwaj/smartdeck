@@ -4,6 +4,7 @@ import { extractTextFromPDF, truncateText, isTextExtractable } from '@/lib/pdf-p
 import { generateFlashcards } from '@/lib/claude'
 
 export const runtime = 'nodejs'
+export const maxDuration = 60
 
 export async function POST(request: Request) {
   const supabase = await createClient()
