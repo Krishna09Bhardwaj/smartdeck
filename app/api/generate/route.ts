@@ -41,9 +41,10 @@ export async function POST(request: Request) {
   let extractedText: string
   try {
     extractedText = await extractTextFromPDF(buffer)
-  } catch {
+  } catch (e) {
+    console.error('PDF parse error:', e)
     return NextResponse.json(
-      { error: 'Failed to read PDF. Make sure it is not password-protected.' },
+      { error: `PDF parse failed: ${e instanceof Error ? e.message : String(e)}` },
       { status: 422 }
     )
   }
