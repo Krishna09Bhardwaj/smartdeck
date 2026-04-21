@@ -49,57 +49,104 @@ export default async function ProgressPage() {
   const overallPct = totalCards > 0 ? Math.round((totalMastered / totalCards) * 100) : 0
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900 mb-8">Your Progress</h1>
+    <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 28, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', marginBottom: 32 }}>
+        <span style={{ color: '#6366f1' }}>&gt;&gt; </span>Your Progress
+      </h1>
 
-      <div className="grid grid-cols-3 gap-6 mb-10">
-        <div className="bg-white rounded-2xl border p-6 text-center shadow-sm">
-          <p className="text-3xl font-bold text-slate-900">{totalCards}</p>
-          <p className="text-sm text-slate-500 mt-1">Total cards</p>
-        </div>
-        <div className="bg-white rounded-2xl border p-6 text-center shadow-sm">
-          <p className="text-3xl font-bold text-green-600">{totalMastered}</p>
-          <p className="text-sm text-slate-500 mt-1">Mastered</p>
-        </div>
-        <div className="bg-white rounded-2xl border p-6 text-center shadow-sm">
-          <p className="text-3xl font-bold text-blue-600">{totalDue}</p>
-          <p className="text-sm text-slate-500 mt-1">Due today</p>
-        </div>
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
+        {[
+          { label: 'Total Cards', value: totalCards, color: '#ffffff' },
+          { label: 'Mastered', value: totalMastered, color: '#22c55e' },
+          { label: 'Due Today', value: totalDue, color: totalDue > 0 ? '#f59e0b' : '#ffffff' },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{
+            background: '#18181b',
+            border: '1px solid #2a2a2e',
+            borderRadius: 16,
+            padding: '24px',
+            textAlign: 'center',
+            transition: 'all 200ms ease',
+          }}>
+            <p style={{ fontSize: 48, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', lineHeight: 1, marginBottom: 8 }}>
+              {value}
+            </p>
+            <p style={{ fontSize: 13, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>
+              {label}
+            </p>
+          </div>
+        ))}
       </div>
 
+      {/* Overall mastery ring */}
       {totalCards > 0 && (
-        <div className="flex justify-center mb-10">
-          <div className="bg-white rounded-2xl border p-6 shadow-sm text-center">
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
+          <div style={{
+            background: '#18181b',
+            border: '1px solid #2a2a2e',
+            borderRadius: 20,
+            padding: '28px 48px',
+            textAlign: 'center',
+          }}>
             <ProgressRing value={overallPct} size={120} strokeWidth={10} />
-            <p className="text-sm text-slate-500 mt-3">Overall mastery</p>
+            <p style={{ fontSize: 13, color: '#a1a1aa', marginTop: 12, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>
+              Overall mastery
+            </p>
           </div>
         </div>
       )}
 
-      <div className="space-y-4">
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">By deck</h2>
-        {deckStats.map(({ deck, total, mastered, due, masteryPct }) => (
-          <Link key={deck.id} href={`/decks/${deck.id}`}>
-            <div className="bg-white rounded-xl border p-5 flex items-center gap-5 hover:shadow-md transition-shadow cursor-pointer">
-              <ProgressRing value={masteryPct} size={64} strokeWidth={6} />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-800 truncate">{deck.title}</p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {mastered}/{total} mastered · {due} due today
-                </p>
+      {/* By deck */}
+      <div>
+        <h2 style={{ fontSize: 12, fontWeight: 600, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
+          By Deck
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {deckStats.map(({ deck, total, mastered, due, masteryPct }) => (
+            <Link key={deck.id} href={`/decks/${deck.id}`} style={{ textDecoration: 'none' }}>
+              <div style={{
+                background: '#18181b',
+                border: '1px solid #2a2a2e',
+                borderRadius: 14,
+                padding: '16px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                cursor: 'pointer',
+                transition: 'all 200ms ease',
+              }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#6366f1'
+                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2e'
+                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+                }}
+              >
+                <ProgressRing value={masteryPct} size={64} strokeWidth={6} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 600, color: '#ffffff', fontSize: 15, marginBottom: 4, textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {deck.title}
+                  </p>
+                  <p style={{ fontSize: 12, color: '#71717a' }}>
+                    {mastered}/{total} mastered · {due} due today
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <p style={{ fontSize: 20, fontWeight: 800, color: '#6366f1', fontVariantNumeric: 'tabular-nums' }}>{masteryPct}%</p>
+                  <p style={{ fontSize: 11, color: '#71717a' }}>mastery</p>
+                </div>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-lg font-bold text-blue-600">{masteryPct}%</p>
-                <p className="text-xs text-slate-400">mastery</p>
-              </div>
-            </div>
-          </Link>
-        ))}
-        {deckStats.length === 0 && (
-          <p className="text-center text-slate-400 py-12">
-            No decks yet. Create one to start tracking progress.
-          </p>
-        )}
+            </Link>
+          ))}
+          {deckStats.length === 0 && (
+            <p style={{ textAlign: 'center', color: '#71717a', padding: '48px 0' }}>
+              No decks yet. Create one to start tracking progress.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )

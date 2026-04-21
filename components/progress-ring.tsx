@@ -11,14 +11,14 @@ export default function ProgressRing({ value, size = 80, strokeWidth = 8, label 
   const offset = circumference - (value / 100) * circumference
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <svg width={size} height={size} className="-rotate-90">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#e2e8f0"
+          stroke="#27272a"
           strokeWidth={strokeWidth}
         />
         <circle
@@ -26,7 +26,7 @@ export default function ProgressRing({ value, size = 80, strokeWidth = 8, label 
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#2563eb"
+          stroke="#6366f1"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -34,8 +34,10 @@ export default function ProgressRing({ value, size = 80, strokeWidth = 8, label 
           style={{ transition: 'stroke-dashoffset 0.5s ease' }}
         />
       </svg>
-      <span className="text-sm font-bold text-slate-700 -mt-1">{Math.round(value)}%</span>
-      {label && <span className="text-xs text-slate-400">{label}</span>}
+      <span style={{ fontSize: 13, fontWeight: 700, color: '#ffffff', marginTop: -4, fontVariantNumeric: 'tabular-nums' }}>
+        {Math.round(value)}%
+      </span>
+      {label && <span style={{ fontSize: 11, color: '#71717a' }}>{label}</span>}
     </div>
   )
 }
