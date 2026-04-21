@@ -22,11 +22,12 @@ export async function GET() {
     .eq('user_id', user.id)
     .gte('interval_days', 21)
 
-  // Get all user's decks for total card count
+  // Get all user's decks
   const { data: userDecks } = await supabase
     .from('decks')
-    .select('card_count')
+    .select('id, title, card_count')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
 
   const total_cards = (userDecks ?? []).reduce((sum: number, d: { card_count: number }) => sum + d.card_count, 0)
 
@@ -45,28 +46,64 @@ export async function GET() {
   }
   const daily_reviews = Object.entries(dailyMap).map(([date, count]) => ({ date, count }))
 
-  // Calculate streak
-  const sortedDates = Object.keys(dailyMap).sort().reverse()
+  // Streak from profiles first, fall back to computed
   let current_streak = 0
   let longest_streak = 0
-  let tempStreak = 0
-  const today = new Date().toISOString().slice(0, 10)
 
-  if (sortedDates.length > 0 && (sortedDates[0] === today || sortedDates[0] === new Date(Date.now() - 86400000).toISOString().slice(0, 10))) {
-    let prev = sortedDates[0]
-    for (const date of sortedDates) {
-      const diffDays = Math.round((new Date(prev).getTime() - new Date(date).getTime()) / 86400000)
-      if (diffDays <= 1) {
-        tempStreak++
-        if (tempStreak > longest_streak) longest_streak = tempStreak
-      } else {
-        if (current_streak === 0) current_streak = tempStreak
-        tempStreak = 1
-      }
-      prev = date
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('current_streak, longest_streak')
+      .eq('id', user.id)
+      .single()
+    if (profile) {
+      current_streak = profile.current_streak
+      longest_streak = profile.longest_streak
     }
-    if (current_streak === 0) current_streak = tempStreak
+  } catch {
+    // profiles table not yet created — compute from card_reviews
+    const sortedDates = Object.keys(dailyMap).sort().reverse()
+    const today = new Date().toISOString().slice(0, 10)
+    let tempStreak = 0
+    if (sortedDates.length > 0 && (sortedDates[0] === today || sortedDates[0] === new Date(Date.now() - 86400000).toISOString().slice(0, 10))) {
+      let prev = sortedDates[0]
+      for (const date of sortedDates) {
+        const diffDays = Math.round((new Date(prev).getTime() - new Date(date).getTime()) / 86400000)
+        if (diffDays <= 1) {
+          tempStreak++
+          if (tempStreak > longest_streak) longest_streak = tempStreak
+        } else {
+          if (current_streak === 0) current_streak = tempStreak
+          tempStreak = 1
+        }
+        prev = date
+      }
+      if (current_streak === 0) current_streak = tempStreak
+    }
   }
+
+  // Deck breakdown with mastery %
+  const deck_breakdown = await Promise.all(
+    (userDecks ?? []).map(async (deck: { id: string; title: string; card_count: number }) => {
+      if (deck.card_count === 0) return { id: deck.id, title: deck.title, card_count: 0, mastery_pct: 0 }
+      const { data: cardIds } = await supabase
+        .from('cards').select('id').eq('deck_id', deck.id)
+      const ids = (cardIds ?? []).map((c: { id: string }) => c.id)
+      if (ids.length === 0) return { id: deck.id, title: deck.title, card_count: deck.card_count, mastery_pct: 0 }
+      const { count: mastered } = await supabase
+        .from('card_reviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('interval_days', 21)
+        .in('card_id', ids)
+      return {
+        id: deck.id,
+        title: deck.title,
+        card_count: deck.card_count,
+        mastery_pct: Math.round(((mastered ?? 0) / deck.card_count) * 100),
+      }
+    })
+  )
 
   return NextResponse.json({
     total_reviews: total_reviews ?? 0,
@@ -74,5 +111,6 @@ export async function GET() {
     longest_streak,
     mastery_percentage: total_cards > 0 ? Math.round(((mastered_cards ?? 0) / total_cards) * 100) : 0,
     daily_reviews,
+    deck_breakdown,
   })
 }

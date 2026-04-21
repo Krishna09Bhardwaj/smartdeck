@@ -1,15 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  transition-property: color, background-color, border-color;
-  transition-duration: 200ms;
 }
 
 html, body {
@@ -17,28 +15,85 @@ html, body {
   color: #fafafa;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Scrollbar ────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #111113; }
+::-webkit-scrollbar-thumb { background: #2a2a2e; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+/* ── Global focus ring ────────────────────────── */
+:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* ── Global button interactions ───────────────── */
+button {
+  font-family: inherit;
+}
+
+/* ── Tailwind base layer ──────────────────────── */
 @layer base {
   :root {
     --radius: 0.5rem;
-    --border: 0 0% 25%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 98%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 45%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 239 84% 67%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 98%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 98%;
   }
   * {
-    border-color: #3f3f46;
+    border-color: #2a2a2e;
   }
+}
+
+/* ── Keyframes ────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  50%       { opacity: 0.4; }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.fade-in {
-  animation: fadeIn 300ms ease-out forwards;
+@keyframes jiggle {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(0.96); }
+  60%  { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.fade-in  { animation: fadeIn 300ms ease-out forwards; }
+.slide-up { animation: slideUp 250ms ease-out forwards; }
+.jiggle   { animation: jiggle 300ms ease-out forwards; }
+
+/* ── Skeleton animation ───────────────────────── */
+.skeleton {
+  background: #1e1e24;
+  border-radius: 8px;
+  animation: pulse 1.5s infinite;
 }

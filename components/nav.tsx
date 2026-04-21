@@ -1,8 +1,7 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import {
   BookMarked, LayoutDashboard, BookOpen, TrendingUp,
   BarChart2, HelpCircle, Flame, LogOut
@@ -17,17 +16,28 @@ const navItems = [
   { href: '/how-it-works', label: 'How it works', icon: HelpCircle },
 ]
 
+interface Profile {
+  current_xp: number
+  total_xp: number
+  user_level: number
+  current_streak: number
+}
+
 export default function Nav() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
   const [email, setEmail] = useState('')
-  const streak = 0
+  const [profile, setProfile] = useState<Profile>({ current_xp: 0, total_xp: 0, user_level: 1, current_streak: 0 })
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) setEmail(data.user.email ?? '')
     })
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setProfile(d) })
+      .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -36,21 +46,56 @@ export default function Nav() {
     router.push('/login')
   }
 
+  const xpForLevel = 500
+  const xpPct = Math.min((profile.current_xp / xpForLevel) * 100, 100)
+
   return (
-    <aside style={{ width: 240, minHeight: '100vh', background: '#18181b', borderRight: '1px solid #3f3f46', display: 'flex', flexDirection: 'column', padding: '24px 0' }}>
+    <aside style={{
+      width: 240,
+      minHeight: '100vh',
+      background: '#111113',
+      borderRight: '1px solid #2a2a2e',
+      display: 'flex',
+      flexDirection: 'column',
+      padding: '20px 0',
+      flexShrink: 0,
+    }}>
       {/* Logo */}
-      <div style={{ padding: '0 20px 24px' }}>
+      <div style={{ padding: '0 16px 20px' }}>
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <BookMarked size={20} color="#6366f1" />
-          <span style={{ fontWeight: 700, fontSize: 18, color: '#fafafa', letterSpacing: '-0.02em' }}>SmartDeck</span>
+          <span style={{ fontWeight: 800, fontSize: 18, color: '#ffffff', letterSpacing: '-0.03em' }}>SmartDeck</span>
         </Link>
-        <p style={{ fontSize: 12, color: '#71717a', marginTop: 6, paddingLeft: 28 }}>{email}</p>
+        <p style={{ fontSize: 12, color: '#71717a', marginTop: 6, paddingLeft: 28, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {email}
+        </p>
+      </div>
+
+      {/* XP bar */}
+      <div style={{ margin: '0 12px 20px', background: '#1a1a2e', borderRadius: 10, padding: '10px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>
+            Level {profile.user_level} learner
+          </span>
+          <span style={{ fontSize: 11, color: '#71717a', fontVariantNumeric: 'tabular-nums' }}>
+            {profile.current_xp} / {xpForLevel} XP
+          </span>
+        </div>
+        <div style={{ height: 6, background: '#2a2a3e', borderRadius: 999, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${xpPct}%`,
+            background: 'linear-gradient(90deg, #6366f1, #818cf8)',
+            borderRadius: 999,
+            transition: 'width 800ms ease-out',
+          }} />
+        </div>
       </div>
 
       {/* Nav items */}
-      <nav style={{ flex: 1, padding: '0 12px' }}>
+      <nav style={{ flex: 1, padding: '0 8px' }}>
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || (href === '/dashboard' && pathname.startsWith('/decks'))
+          const active = pathname === href || (href === '/dashboard' && (pathname === '/dashboard' || pathname.startsWith('/decks')))
           return (
             <Link
               key={label}
@@ -60,14 +105,26 @@ export default function Nav() {
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 12px', borderRadius: 8, marginBottom: 2,
                 textDecoration: 'none',
-                background: isActive ? '#27272a' : 'transparent',
-                borderLeft: isActive ? '3px solid #6366f1' : '3px solid transparent',
-                color: isActive ? '#fafafa' : '#a1a1aa',
-                fontSize: 14, fontWeight: isActive ? 500 : 400,
-                transition: 'all 200ms',
+                background: active ? '#1e1e24' : 'transparent',
+                borderLeft: active ? '3px solid #6366f1' : '3px solid transparent',
+                color: active ? '#ffffff' : '#71717a',
+                fontSize: 14, fontWeight: active ? 600 : 400,
+                transition: 'all 200ms ease',
+              }}
+              onMouseEnter={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.background = '#1e1e24'
+                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'
+                }
+              }}
+              onMouseLeave={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent'
+                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+                }
               }}
             >
-              <Icon size={16} />
+              <Icon size={18} />
               {label}
             </Link>
           )
@@ -75,22 +132,41 @@ export default function Nav() {
       </nav>
 
       {/* Bottom */}
-      <div style={{ padding: '0 20px', borderTop: '1px solid #3f3f46', paddingTop: 16, marginTop: 8 }}>
-        {/* Streak widget */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, background: '#27272a', marginBottom: 8 }}>
-          <Flame size={16} color="#f59e0b" />
-          <span style={{ fontSize: 13, color: streak > 0 ? '#f59e0b' : '#71717a', fontWeight: 500 }}>
-            {streak > 0 ? `${streak} day streak` : 'Start your streak today'}
-          </span>
-        </div>
+      <div style={{ padding: '0 12px', borderTop: '1px solid #2a2a2e', paddingTop: 16, marginTop: 8 }}>
+        {/* Streak */}
+        <Link
+          href="/dashboard"
+          style={{ textDecoration: 'none' }}
+        >
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 12px', borderRadius: 8,
+            background: '#1a1a0e',
+            border: '1px solid #2a2a1e',
+            marginBottom: 8,
+            cursor: 'pointer',
+            transition: 'all 200ms ease',
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
+          >
+            <Flame size={16} color="#f59e0b" />
+            <span style={{ fontSize: 13, color: profile.current_streak > 0 ? '#f59e0b' : '#71717a', fontWeight: 600 }}>
+              {profile.current_streak > 0 ? `${profile.current_streak} day streak` : 'Start your streak today'}
+            </span>
+          </div>
+        </Link>
+
         <button
           onClick={handleSignOut}
           style={{
             display: 'flex', alignItems: 'center', gap: 8, width: '100%',
             padding: '10px 12px', borderRadius: 8, border: 'none',
             background: 'transparent', color: '#71717a', fontSize: 14,
-            cursor: 'pointer', transition: 'all 200ms',
+            cursor: 'pointer', transition: 'all 200ms ease',
           }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ffffff' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#71717a' }}
         >
           <LogOut size={16} />
           Sign out
