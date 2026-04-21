@@ -1,8 +1,7 @@
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require('pdf-parse') as (buffer: Buffer) => Promise<{ text: string; numpages: number }>
-  const data = await pdfParse(buffer)
-  return data.text
+  const { extractText } = await import('unpdf')
+  const { text } = await extractText(new Uint8Array(buffer), { mergePages: true })
+  return text
 }
 
 export function truncateText(text: string, maxChars = 15000): string {
