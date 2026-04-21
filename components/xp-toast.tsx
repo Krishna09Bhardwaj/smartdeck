@@ -3,10 +3,11 @@ import { useEffect, useState } from 'react'
 
 interface XPToastProps {
   amount: number
+  index: number
   onDone: () => void
 }
 
-export default function XPToast({ amount, onDone }: XPToastProps) {
+export default function XPToast({ amount, index, onDone }: XPToastProps) {
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function XPToast({ amount, onDone }: XPToastProps) {
     <div
       style={{
         position: 'fixed',
-        top: 80,
+        top: 80 + index * 52,
         right: 24,
         zIndex: 9999,
         background: 'rgba(34,197,94,0.15)',
@@ -30,9 +31,9 @@ export default function XPToast({ amount, onDone }: XPToastProps) {
         fontSize: 14,
         fontVariantNumeric: 'tabular-nums',
         pointerEvents: 'none',
-        transition: 'opacity 200ms ease, transform 1200ms ease',
+        transition: 'opacity 200ms ease, transform 200ms ease',
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(-40px)',
+        transform: visible ? 'translateY(0)' : 'translateY(-10px)',
       }}
     >
       +{amount} XP

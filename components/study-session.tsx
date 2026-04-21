@@ -260,8 +260,8 @@ export default function StudySession({ cards, deckId }: StudySessionProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* XP toasts */}
-      {toasts.map(t => (
-        <XPToast key={t.id} amount={t.amount} onDone={() => setToasts(ts => ts.filter(x => x.id !== t.id))} />
+      {toasts.map((t, i) => (
+        <XPToast key={t.id} amount={t.amount} index={i} onDone={() => setToasts(ts => ts.filter(x => x.id !== t.id))} />
       ))}
 
       {/* Top bar */}
