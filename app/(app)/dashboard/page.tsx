@@ -10,17 +10,19 @@ async function getDeckDueCount(
   userId: string,
   supabase: Awaited<ReturnType<typeof createClient>>
 ) {
-  const today = new Date().toISOString().split('T')[0]
-  const { data: cards } = await supabase
-    .from('cards')
-    .select('id, card_reviews(next_review_date, user_id)')
-    .eq('deck_id', deckId)
-  if (!cards) return 0
-  return cards.filter(card => {
-    const reviews = card.card_reviews as Array<{ next_review_date: string; user_id: string }>
-    const userReview = reviews.find(r => r.user_id === userId)
-    return !userReview || userReview.next_review_date <= today
-  }).length
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const { data: cards } = await supabase
+      .from('cards')
+      .select('id, card_reviews(next_review_date, user_id)')
+      .eq('deck_id', deckId)
+    if (!cards) return 0
+    return cards.filter(card => {
+      const reviews = card.card_reviews as Array<{ next_review_date: string; user_id: string }>
+      const userReview = reviews.find(r => r.user_id === userId)
+      return !userReview || userReview.next_review_date <= today
+    }).length
+  } catch { return 0 }
 }
 
 function extractName(email: string): string {
@@ -38,50 +40,60 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const hour = new Date().getUTCHours() + 5 // IST offset approximation
+  const hour = new Date().getUTCHours() + 5
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const name = extractName(user.email ?? '')
 
-  const { data: decks } = await supabase
-    .from('decks')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+  // Fetch decks — safe default on failure
+  let decks: Deck[] = []
+  try {
+    const { data } = await supabase
+      .from('decks')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    decks = data ?? []
+  } catch { decks = [] }
 
+  // Per-deck due + mastery — each deck is independent, failures default to 0
   const decksWithDue = await Promise.all(
-    (decks ?? []).map(async (deck: Deck) => {
+    decks.map(async (deck: Deck) => {
       const dueCount = await getDeckDueCount(deck.id, user.id, supabase)
-      const totalCards = deck.card_count
       let masteryPct = 0
-      if (totalCards > 0) {
-        const { data: cardIds } = await supabase
-          .from('cards').select('id').eq('deck_id', deck.id)
-        const ids = (cardIds ?? []).map((c: { id: string }) => c.id)
-        if (ids.length > 0) {
-          const { count: masteredCount } = await supabase
-            .from('card_reviews')
-            .select('card_id', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .gte('interval_days', 21)
-            .in('card_id', ids)
-          masteryPct = Math.round(((masteredCount ?? 0) / totalCards) * 100)
+      try {
+        if (deck.card_count > 0) {
+          const { data: cardIds } = await supabase
+            .from('cards').select('id').eq('deck_id', deck.id)
+          const ids = (cardIds ?? []).map((c: { id: string }) => c.id)
+          if (ids.length > 0) {
+            const { count: masteredCount } = await supabase
+              .from('card_reviews')
+              .select('card_id', { count: 'exact', head: true })
+              .eq('user_id', user.id)
+              .gte('interval_days', 21)
+              .in('card_id', ids)
+            masteryPct = Math.round(((masteredCount ?? 0) / deck.card_count) * 100)
+          }
         }
-      }
+      } catch { masteryPct = 0 }
       return { deck, dueCount, masteryPct }
     })
   )
 
   const totalDue = decksWithDue.reduce((sum, d) => sum + d.dueCount, 0)
-  const totalDecks = (decks ?? []).length
-  const totalCards = (decks ?? []).reduce((sum: number, d: Deck) => sum + d.card_count, 0)
+  const totalDecks = decks.length
+  const totalCards = decks.reduce((sum: number, d: Deck) => sum + d.card_count, 0)
 
-  const { count: totalMastered } = await supabase
-    .from('card_reviews')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .gte('interval_days', 21)
+  let totalMastered = 0
+  try {
+    const { count } = await supabase
+      .from('card_reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('interval_days', 21)
+    totalMastered = count ?? 0
+  } catch { totalMastered = 0 }
 
-  // Find first deck with due cards for study all button
   const firstDueDeck = decksWithDue.find(d => d.dueCount > 0)
 
   return (
@@ -91,7 +103,6 @@ export default async function DashboardPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 36 }}>
         <div>
-          {/* >> prefix in indigo */}
           <h1 style={{ fontSize: 32, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
             <span style={{ color: '#6366f1' }}>&gt;&gt; </span>
             {greeting}, {name} 👋
@@ -105,20 +116,14 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        {/* Study / New deck buttons */}
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
           {totalDue > 0 && firstDueDeck ? (
             <Link
               href={`/decks/${firstDueDeck.deck.id}/study`}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                padding: '12px 24px',
-                background: '#6366f1',
-                color: '#ffffff',
-                borderRadius: 10,
-                textDecoration: 'none',
-                fontWeight: 600, fontSize: 14,
-                transition: 'all 200ms ease',
+                padding: '12px 24px', background: '#6366f1', color: '#ffffff',
+                borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 14,
                 boxShadow: '0 4px 20px rgba(99,102,241,0.25)',
               }}
             >
@@ -129,8 +134,8 @@ export default async function DashboardPage() {
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '12px 24px', background: 'rgba(34,197,94,0.1)',
-              border: '1px solid #22c55e30',
-              color: '#22c55e', borderRadius: 10, fontWeight: 600, fontSize: 14,
+              border: '1px solid #22c55e30', color: '#22c55e',
+              borderRadius: 10, fontWeight: 600, fontSize: 14,
             }}>
               All caught up ✓
             </div>
@@ -139,14 +144,9 @@ export default async function DashboardPage() {
             href="/decks/new"
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              padding: '12px 20px',
-              background: '#1e1e24',
-              border: '1px solid #2a2a2e',
-              color: '#ffffff',
-              borderRadius: 10,
-              textDecoration: 'none',
-              fontWeight: 500, fontSize: 14,
-              transition: 'all 200ms ease',
+              padding: '12px 20px', background: '#1e1e24',
+              border: '1px solid #2a2a2e', color: '#ffffff',
+              borderRadius: 10, textDecoration: 'none', fontWeight: 500, fontSize: 14,
             }}
           >
             + New Deck
@@ -157,42 +157,15 @@ export default async function DashboardPage() {
       {/* Stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 36 }}>
         {[
-          {
-            label: 'Total Decks',
-            value: totalDecks,
-            color: '#ffffff',
-            glow: undefined,
-          },
-          {
-            label: 'Cards Due Today',
-            value: totalDue,
-            color: totalDue > 0 ? '#f59e0b' : '#ffffff',
-            glow: totalDue > 0 ? '0 0 0 1px rgba(245,158,11,0.15)' : undefined,
-          },
-          {
-            label: 'Total Mastered',
-            value: totalMastered ?? 0,
-            color: '#22c55e',
-            glow: '0 0 0 1px rgba(34,197,94,0.12)',
-          },
-          {
-            label: 'Total Cards',
-            value: totalCards,
-            color: '#ffffff',
-            glow: undefined,
-          },
-        ].map(({ label, value, color, glow }) => (
-          <div
-            key={label}
-            style={{
-              background: '#18181b',
-              border: '1px solid #2a2a2e',
-              borderRadius: 16,
-              padding: '20px 24px',
-              boxShadow: glow,
-              cursor: 'default',
-            }}
-          >
+          { label: 'Total Decks', value: totalDecks, color: '#ffffff' },
+          { label: 'Cards Due Today', value: totalDue, color: totalDue > 0 ? '#f59e0b' : '#ffffff' },
+          { label: 'Total Mastered', value: totalMastered, color: '#22c55e' },
+          { label: 'Total Cards', value: totalCards, color: '#ffffff' },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{
+            background: '#18181b', border: '1px solid #2a2a2e',
+            borderRadius: 16, padding: '20px 24px', cursor: 'default',
+          }}>
             <p style={{ fontSize: 13, color: '#71717a', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>
               {label}
             </p>
@@ -218,16 +191,12 @@ export default async function DashboardPage() {
           <p style={{ color: '#71717a', marginBottom: 28, lineHeight: 1.6 }}>
             Upload any PDF and AI will turn it into smart flashcards in seconds
           </p>
-          <Link
-            href="/decks/new"
-            style={{
-              display: 'inline-block', padding: '12px 28px',
-              background: '#6366f1', color: '#ffffff',
-              borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 15,
-              boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
-              transition: 'all 200ms ease',
-            }}
-          >
+          <Link href="/decks/new" style={{
+            display: 'inline-block', padding: '12px 28px',
+            background: '#6366f1', color: '#ffffff',
+            borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 15,
+            boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
+          }}>
             Upload PDF
           </Link>
         </div>
