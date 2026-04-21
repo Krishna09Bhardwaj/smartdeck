@@ -104,40 +104,28 @@ export default async function ProgressPage() {
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {deckStats.map(({ deck, total, mastered, due, masteryPct }) => (
-            <Link key={deck.id} href={`/decks/${deck.id}`} style={{ textDecoration: 'none' }}>
-              <div style={{
-                background: '#18181b',
-                border: '1px solid #2a2a2e',
-                borderRadius: 14,
-                padding: '16px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 16,
-                cursor: 'pointer',
-                transition: 'all 200ms ease',
-              }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = '#6366f1'
-                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2e'
-                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-                }}
-              >
-                <ProgressRing value={masteryPct} size={64} strokeWidth={6} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 600, color: '#ffffff', fontSize: 15, marginBottom: 4, textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {deck.title}
-                  </p>
-                  <p style={{ fontSize: 12, color: '#71717a' }}>
-                    {mastered}/{total} mastered · {due} due today
-                  </p>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <p style={{ fontSize: 20, fontWeight: 800, color: '#6366f1', fontVariantNumeric: 'tabular-nums' }}>{masteryPct}%</p>
-                  <p style={{ fontSize: 11, color: '#71717a' }}>mastery</p>
-                </div>
+            <Link key={deck.id} href={`/decks/${deck.id}`} style={{
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              background: '#18181b',
+              border: '1px solid #2a2a2e',
+              borderRadius: 14,
+              padding: '16px 20px',
+            }}>
+              <ProgressRing value={masteryPct} size={64} strokeWidth={6} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontWeight: 600, color: '#ffffff', fontSize: 15, marginBottom: 4, textTransform: 'capitalize', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {deck.title}
+                </p>
+                <p style={{ fontSize: 12, color: '#71717a' }}>
+                  {mastered}/{total} mastered · {due} due today
+                </p>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <p style={{ fontSize: 20, fontWeight: 800, color: '#6366f1', fontVariantNumeric: 'tabular-nums' }}>{masteryPct}%</p>
+                <p style={{ fontSize: 11, color: '#71717a' }}>mastery</p>
               </div>
             </Link>
           ))}
