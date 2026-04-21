@@ -27,7 +27,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/signup')
   const isAppPage = request.nextUrl.pathname.startsWith('/dashboard') ||
     request.nextUrl.pathname.startsWith('/decks') ||
-    request.nextUrl.pathname.startsWith('/progress')
+    request.nextUrl.pathname.startsWith('/progress') ||
+    request.nextUrl.pathname.startsWith('/stats')
 
   if (!user && isAppPage) {
     return NextResponse.redirect(new URL('/login', request.url))

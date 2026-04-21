@@ -24,9 +24,16 @@ export async function POST(request: Request) {
   const body = await request.json()
   const { title, description, card_count } = body
 
+  if (!title || typeof title !== 'string' || title.trim().length === 0) {
+    return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+  }
+  if (title.trim().length > 200) {
+    return NextResponse.json({ error: 'Title must be under 200 characters' }, { status: 400 })
+  }
+
   const { data, error } = await supabase
     .from('decks')
-    .insert({ user_id: user.id, title, description, card_count: card_count ?? 0 })
+    .insert({ user_id: user.id, title: title.trim(), description: description?.trim() ?? null, card_count: card_count ?? 0 })
     .select()
     .single()
 

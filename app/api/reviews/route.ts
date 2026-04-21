@@ -11,8 +11,23 @@ export async function POST(request: Request) {
   const body = await request.json()
   const { card_id, quality } = body as { card_id: string; quality: ReviewQuality }
 
-  if (!card_id || ![1, 3, 4, 5].includes(quality)) {
+  if (!card_id || typeof card_id !== 'string' || ![1, 3, 4, 5].includes(quality)) {
     return NextResponse.json({ error: 'Invalid card_id or quality' }, { status: 400 })
+  }
+
+  // Verify the card belongs to a deck owned by this user (prevents IDOR)
+  const { data: card } = await supabase
+    .from('cards')
+    .select('id, deck_id, decks!inner(user_id)')
+    .eq('id', card_id)
+    .single()
+
+  if (!card) return NextResponse.json({ error: 'Card not found' }, { status: 404 })
+
+  const decks = card.decks as unknown as { user_id: string } | { user_id: string }[]
+  const deckUserId = Array.isArray(decks) ? decks[0]?.user_id : decks?.user_id
+  if (deckUserId !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { data: existing } = await supabase

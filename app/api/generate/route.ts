@@ -25,6 +25,9 @@ export async function POST(request: Request) {
   if (!file || !title) {
     return NextResponse.json({ error: 'File and title are required' }, { status: 400 })
   }
+  if (title.trim().length === 0 || title.trim().length > 200) {
+    return NextResponse.json({ error: 'Title must be 1–200 characters' }, { status: 400 })
+  }
 
   if (file.type !== 'application/pdf') {
     return NextResponse.json({ error: 'Only PDF files are supported' }, { status: 400 })
