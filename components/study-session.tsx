@@ -1,10 +1,8 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Flashcard from './flashcard'
-import { Progress } from '@/components/ui/progress'
-import { Button } from '@/components/ui/button'
 import type { Card, ReviewQuality } from '@/types'
 
 interface StudySessionProps {
@@ -40,6 +38,19 @@ export default function StudySession({ cards, deckId }: StudySessionProps) {
     }
   }, [index, cards])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const key = e.key.toLowerCase()
+      if (key === 'f') handleRate(1)
+      else if (key === 'h') handleRate(3)
+      else if (key === 'g') handleRate(4)
+      else if (key === 'e') handleRate(5)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [handleRate])
+
   if (done) {
     const forgot = results.filter(r => r.quality === 1).length
     const hard = results.filter(r => r.quality === 3).length
@@ -50,29 +61,61 @@ export default function StudySession({ cards, deckId }: StudySessionProps) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center"
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 24, textAlign: 'center' }}
       >
-        <div className="text-5xl">🎉</div>
-        <h2 className="text-2xl font-bold">Session complete!</h2>
-        <p className="text-slate-500">You reviewed {cards.length} cards</p>
-        <div className="grid grid-cols-4 gap-3 mt-2">
+        {/* Check circle */}
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%',
+          background: 'rgba(34,197,94,0.15)', border: '2px solid #22c55e',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <path d="M8 18 L15 25 L28 11" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+
+        <div>
+          <h2 style={{ fontSize: 28, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em', marginBottom: 8 }}>
+            Session complete!
+          </h2>
+          <p style={{ color: '#a1a1aa', fontSize: 15 }}>You reviewed {cards.length} card{cards.length === 1 ? '' : 's'}</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {[
-            { label: 'Forgot', count: forgot, color: 'text-red-600' },
-            { label: 'Hard', count: hard, color: 'text-orange-600' },
-            { label: 'Good', count: good, color: 'text-blue-600' },
-            { label: 'Easy', count: easy, color: 'text-green-600' },
-          ].map(({ label, count, color }) => (
-            <div key={label} className="bg-white rounded-xl p-4 border shadow-sm">
-              <p className={`text-2xl font-bold ${color}`}>{count}</p>
-              <p className="text-xs text-slate-500 mt-1">{label}</p>
+            { label: 'Forgot', count: forgot, color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+            { label: 'Hard', count: hard, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+            { label: 'Good', count: good, color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
+            { label: 'Easy', count: easy, color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+          ].map(({ label, count, color, bg }) => (
+            <div key={label} style={{ background: bg, borderRadius: 12, padding: '16px 20px', border: `1px solid ${color}30` }}>
+              <p style={{ fontSize: 28, fontWeight: 700, color }}>{count}</p>
+              <p style={{ fontSize: 12, color: '#a1a1aa', marginTop: 4 }}>{label}</p>
             </div>
           ))}
         </div>
-        <div className="flex gap-3 mt-4">
-          <Button variant="outline" onClick={() => router.push(`/decks/${deckId}`)}>
+
+        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+          <button
+            onClick={() => router.push(`/decks/${deckId}`)}
+            style={{
+              padding: '10px 24px', background: 'transparent',
+              border: '1px solid #3f3f46', color: '#fafafa',
+              borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 500,
+            }}
+          >
             Back to deck
-          </Button>
-          <Button onClick={() => router.push('/dashboard')}>Dashboard</Button>
+          </button>
+          <button
+            onClick={() => router.push('/dashboard')}
+            style={{
+              padding: '10px 24px', background: '#6366f1',
+              border: 'none', color: '#fafafa',
+              borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 500,
+            }}
+          >
+            Dashboard
+          </button>
         </div>
       </motion.div>
     )
@@ -82,15 +125,27 @@ export default function StudySession({ cards, deckId }: StudySessionProps) {
   const card = cards[index]
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-500">{index + 1} / {cards.length}</span>
-        <div className="flex-1 mx-4">
-          <Progress value={progress} className="h-2" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Progress bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <span style={{ fontSize: 13, color: '#a1a1aa', whiteSpace: 'nowrap' }}>
+          Card {index + 1} of {cards.length}
+        </span>
+        <div style={{ flex: 1, height: 3, background: '#27272a', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', background: '#6366f1', borderRadius: 2,
+            width: `${progress}%`, transition: 'width 300ms ease'
+          }} />
         </div>
-        <Button variant="ghost" size="sm" onClick={() => router.push(`/decks/${deckId}`)}>
+        <button
+          onClick={() => router.push(`/decks/${deckId}`)}
+          style={{
+            padding: '6px 14px', background: 'transparent', border: '1px solid #3f3f46',
+            color: '#a1a1aa', borderRadius: 6, fontSize: 13, cursor: 'pointer',
+          }}
+        >
           Exit
-        </Button>
+        </button>
       </div>
 
       <AnimatePresence mode="wait">

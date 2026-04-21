@@ -1,12 +1,15 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import UploadZone from '@/components/upload-zone'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Loader2 } from 'lucide-react'
+import { UploadCloud, X, FileText } from 'lucide-react'
+
+const STATUS_MESSAGES = [
+  "Reading your PDF...",
+  "Identifying key concepts...",
+  "Writing questions like a great teacher...",
+  "Checking for edge cases...",
+  "Building your deck...",
+]
 
 export default function NewDeckPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -14,9 +17,36 @@ export default function NewDeckPage() {
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<'idle' | 'generating' | 'error'>('idle')
   const [error, setError] = useState('')
+  const [dragOver, setDragOver] = useState(false)
+  const [currentMsgIndex, setCurrentMsgIndex] = useState(0)
+  const [fakeProgress, setFakeProgress] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   const isLoading = status === 'generating'
+
+  useEffect(() => {
+    if (!isLoading) return
+    setCurrentMsgIndex(0)
+    setFakeProgress(0)
+
+    const msgInterval = setInterval(() => {
+      setCurrentMsgIndex(i => (i + 1) % STATUS_MESSAGES.length)
+    }, 2000)
+
+    // Fake progress: 0 -> 85 over 20s
+    const start = Date.now()
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - start
+      const pct = Math.min(85, (elapsed / 20000) * 85)
+      setFakeProgress(pct)
+    }, 200)
+
+    return () => {
+      clearInterval(msgInterval)
+      clearInterval(progressInterval)
+    }
+  }, [isLoading])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -58,68 +88,164 @@ export default function NewDeckPage() {
     }
   }
 
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver(false)
+    const dropped = e.dataTransfer.files[0]
+    if (dropped && dropped.type === 'application/pdf') {
+      setFile(dropped)
+    }
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0]
+    if (selected) setFile(selected)
+  }
+
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Create a new deck</h1>
+    <div style={{ padding: 32, maxWidth: 640, margin: '0 auto' }}>
+      {/* Loading overlay */}
+      {isLoading && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(9,9,11,0.95)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          zIndex: 50
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 24, animation: 'pulse 1.5s infinite' }}>📚</div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fafafa', marginBottom: 8 }}>
+            {STATUS_MESSAGES[currentMsgIndex]}
+          </h2>
+          <div style={{ width: 300, height: 4, background: '#27272a', borderRadius: 2, overflow: 'hidden', marginTop: 16 }}>
+            <div style={{ height: '100%', background: '#6366f1', borderRadius: 2, width: `${fakeProgress}%`, transition: 'width 500ms ease' }} />
+          </div>
+          <p style={{ color: '#71717a', fontSize: 13, marginTop: 12 }}>{Math.round(fakeProgress)}% complete</p>
+        </div>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload your study material</CardTitle>
-          <CardDescription>
-            Gemini AI will generate 15–25 high-quality flashcards from your PDF.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="title">Deck title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="e.g. Chapter 5: Cell Biology"
-                required
-                disabled={isLoading}
-              />
-            </div>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.02em', marginBottom: 8 }}>
+        Create a new deck
+      </h1>
+      <p style={{ color: '#a1a1aa', marginBottom: 32, fontSize: 14 }}>
+        AI will generate 15–25 high-quality flashcards from your PDF.
+      </p>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (optional)</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                placeholder="e.g. Class 10 Biology revision"
-                disabled={isLoading}
-              />
-            </div>
+      <div style={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 12, padding: 32 }}>
+        <form onSubmit={handleSubmit}>
+          {/* Title */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 13, color: '#a1a1aa', marginBottom: 6, fontWeight: 500 }}>
+              Deck title *
+            </label>
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. Chapter 5: Cell Biology"
+              required
+              disabled={isLoading}
+              style={{
+                width: '100%', padding: '10px 14px',
+                background: '#27272a', border: '1px solid #3f3f46',
+                borderRadius: 8, color: '#fafafa', fontSize: 14,
+                outline: 'none',
+              }}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label>PDF file</Label>
-              <UploadZone
-                onFileSelect={setFile}
-                selectedFile={file}
-                onClear={() => setFile(null)}
-              />
-            </div>
+          {/* Description */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 13, color: '#a1a1aa', marginBottom: 6, fontWeight: 500 }}>
+              Description <span style={{ color: '#71717a' }}>(optional)</span>
+            </label>
+            <input
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="e.g. Class 10 Biology revision"
+              disabled={isLoading}
+              style={{
+                width: '100%', padding: '10px 14px',
+                background: '#27272a', border: '1px solid #3f3f46',
+                borderRadius: 8, color: '#fafafa', fontSize: 14,
+                outline: 'none',
+              }}
+            />
+          </div>
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
-
-            {isLoading && (
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                <p className="text-sm text-blue-700">
-                  Gemini is generating your flashcards… (this takes ~15 seconds)
+          {/* Dropzone */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', fontSize: 13, color: '#a1a1aa', marginBottom: 6, fontWeight: 500 }}>
+              PDF file *
+            </label>
+            {file ? (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '14px 16px', background: '#27272a',
+                border: '1px solid #3f3f46', borderRadius: 8
+              }}>
+                <FileText size={20} color="#6366f1" />
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 14, color: '#fafafa', fontWeight: 500 }}>{file.name}</p>
+                  <p style={{ fontSize: 12, color: '#71717a' }}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFile(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#71717a', padding: 4 }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <div
+                onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: `2px dashed ${dragOver ? '#6366f1' : '#3f3f46'}`,
+                  borderRadius: 12, padding: '40px 24px', textAlign: 'center',
+                  cursor: 'pointer', transition: 'border-color 200ms',
+                  background: dragOver ? 'rgba(99,102,241,0.05)' : 'transparent',
+                }}
+              >
+                <UploadCloud size={40} color={dragOver ? '#6366f1' : '#3f3f46'} style={{ margin: '0 auto 12px' }} />
+                <p style={{ fontSize: 16, fontWeight: 600, color: '#fafafa', marginBottom: 4 }}>
+                  Drop your PDF here
                 </p>
+                <p style={{ fontSize: 14, color: '#a1a1aa', marginBottom: 8 }}>or click to browse</p>
+                <p style={{ fontSize: 12, color: '#71717a' }}>Max 10MB · Text-based PDFs only</p>
               </div>
             )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={handleFileInput}
+              style={{ display: 'none' }}
+            />
+          </div>
 
-            <Button type="submit" className="w-full" disabled={!file || !title || isLoading}>
-              {isLoading ? 'Generating…' : 'Generate flashcards'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          {error && (
+            <div style={{ padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: '#ef4444' }}>{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={!file || !title || isLoading}
+            style={{
+              width: '100%', padding: '12px 24px',
+              background: !file || !title || isLoading ? '#27272a' : '#6366f1',
+              color: !file || !title || isLoading ? '#71717a' : '#fafafa',
+              border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600,
+              cursor: !file || !title || isLoading ? 'not-allowed' : 'pointer',
+              transition: 'all 200ms',
+            }}
+          >
+            {isLoading ? 'Generating…' : 'Generate flashcards'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

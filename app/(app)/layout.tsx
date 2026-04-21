@@ -1,8 +1,8 @@
-export const dynamic = 'force-dynamic'
-
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import Nav from '@/components/nav'
+
+export const dynamic = 'force-dynamic'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -10,9 +10,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect('/login')
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#09090b' }}>
       <Nav />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main style={{ flex: 1, overflowY: 'auto' }}>
+        {children}
+      </main>
     </div>
   )
 }

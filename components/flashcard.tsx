@@ -9,10 +9,10 @@ interface FlashcardProps {
 }
 
 const ratingButtons = [
-  { label: 'Forgot', quality: 1 as const, color: 'bg-red-100 hover:bg-red-200 text-red-700 border-red-200' },
-  { label: 'Hard', quality: 3 as const, color: 'bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-200' },
-  { label: 'Good', quality: 4 as const, color: 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-200' },
-  { label: 'Easy', quality: 5 as const, color: 'bg-green-100 hover:bg-green-200 text-green-700 border-green-200' },
+  { label: 'Forgot', quality: 1 as const, key: 'F', bg: '#ef4444', color: '#fafafa' },
+  { label: 'Hard', quality: 3 as const, key: 'H', bg: '#f59e0b', color: '#09090b' },
+  { label: 'Good', quality: 4 as const, key: 'G', bg: '#6366f1', color: '#fafafa' },
+  { label: 'Easy', quality: 5 as const, key: 'E', bg: '#22c55e', color: '#fafafa' },
 ]
 
 export default function Flashcard({ question, answer, onRate }: FlashcardProps) {
@@ -24,57 +24,101 @@ export default function Flashcard({ question, answer, onRate }: FlashcardProps) 
   }
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
+      {/* Card */}
       <div
-        className="w-full max-w-2xl cursor-pointer"
-        style={{ perspective: '1000px', minHeight: '280px' }}
+        style={{ width: '100%', maxWidth: 640, cursor: 'pointer', perspective: '1000px', minHeight: 280 }}
         onClick={() => setFlipped(f => !f)}
       >
         <motion.div
-          className="relative w-full"
-          style={{ transformStyle: 'preserve-3d', minHeight: '280px' }}
+          style={{
+            position: 'relative', width: '100%', minHeight: 280,
+            transformStyle: 'preserve-3d',
+            willChange: 'transform',
+          }}
           animate={{ rotateY: flipped ? 180 : 0 }}
-          transition={{ duration: 0.45, ease: 'easeInOut' }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
         >
           {/* Front */}
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-white rounded-2xl shadow-lg border border-slate-200"
-            style={{ backfaceVisibility: 'hidden' }}
+            style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              padding: 40, background: '#18181b', borderRadius: 16,
+              border: '1px solid #3f3f46',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'translateZ(0)',
+            }}
           >
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">Question</p>
-            <p className="text-xl font-medium text-slate-800 text-center leading-relaxed">{question}</p>
-            <p className="mt-6 text-sm text-slate-400">Tap to reveal answer</p>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: '#71717a', marginBottom: 16, textTransform: 'uppercase' }}>
+              Question
+            </p>
+            <p style={{ fontSize: 20, fontWeight: 500, color: '#fafafa', textAlign: 'center', lineHeight: 1.6 }}>
+              {question}
+            </p>
+            <p style={{ marginTop: 24, fontSize: 13, color: '#71717a' }}>TAP TO REVEAL</p>
           </div>
+
           {/* Back */}
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-blue-50 rounded-2xl shadow-lg border border-blue-200"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              padding: 40, background: '#27272a', borderRadius: 16,
+              border: '1px solid #3f3f46',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg) translateZ(0)',
+            }}
           >
-            <p className="text-xs font-semibold uppercase tracking-wider text-blue-400 mb-4">Answer</p>
-            <p className="text-lg text-slate-800 text-center leading-relaxed">{answer}</p>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: '#6366f1', marginBottom: 16, textTransform: 'uppercase' }}>
+              Answer
+            </p>
+            <p style={{ fontSize: 17, color: '#fafafa', textAlign: 'center', lineHeight: 1.6 }}>
+              {answer}
+            </p>
           </div>
         </motion.div>
       </div>
 
-      {flipped && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex gap-3"
-        >
-          {ratingButtons.map(({ label, quality, color }) => (
+      {/* Rating buttons */}
+      <motion.div
+        style={{ display: 'flex', gap: 12, flexDirection: 'column', alignItems: 'center' }}
+        animate={{ opacity: flipped ? 1 : 0, y: flipped ? 0 : 16 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div style={{ display: 'flex', gap: 10 }}>
+          {ratingButtons.map(({ label, quality, bg, color }) => (
             <button
               key={quality}
               onClick={() => handleRate(quality)}
-              className={`px-5 py-2.5 rounded-xl border text-sm font-semibold transition-all ${color}`}
+              disabled={!flipped}
+              style={{
+                padding: '10px 20px', background: bg, color, border: 'none',
+                borderRadius: 10, fontSize: 14, fontWeight: 600,
+                cursor: flipped ? 'pointer' : 'default',
+                transition: 'all 200ms', minWidth: 80,
+              }}
             >
               {label}
             </button>
           ))}
-        </motion.div>
-      )}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {ratingButtons.map(({ key: shortcut, quality }) => (
+            <div
+              key={quality}
+              style={{ textAlign: 'center', width: 80, fontSize: 11, color: '#71717a', fontFamily: 'monospace' }}
+            >
+              {shortcut}
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
       {!flipped && (
-        <p className="text-sm text-slate-400">Click the card to see the answer</p>
+        <p style={{ fontSize: 13, color: '#71717a' }}>Click the card to reveal the answer</p>
       )}
     </div>
   )

@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import StudySession from '@/components/study-session'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 
 export default async function StudyPage({
   params,
@@ -39,20 +38,36 @@ export default async function StudyPage({
 
   if (dueCards.length === 0) {
     return (
-      <div className="p-8 max-w-2xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center gap-4">
-        <p className="text-4xl">✅</p>
-        <h1 className="text-xl font-bold">All caught up!</h1>
-        <p className="text-slate-500">No cards are due for review in this deck today.</p>
-        <Link href={`/decks/${deckId}`}>
-          <Button variant="outline">Back to deck</Button>
+      <div style={{
+        padding: 32, maxWidth: 640, margin: '0 auto',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', minHeight: '60vh', textAlign: 'center', gap: 16
+      }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%',
+          background: 'rgba(34,197,94,0.15)', border: '2px solid #22c55e',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 28
+        }}>✅</div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fafafa' }}>All caught up!</h1>
+        <p style={{ color: '#a1a1aa', maxWidth: 300 }}>No cards are due for review in this deck today.</p>
+        <Link
+          href={`/decks/${deckId}`}
+          style={{
+            padding: '10px 24px', border: '1px solid #3f3f46',
+            color: '#fafafa', borderRadius: 8, textDecoration: 'none',
+            fontSize: 14, fontWeight: 500,
+          }}
+        >
+          Back to deck
         </Link>
       </div>
     )
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-lg font-semibold text-slate-700 mb-6">{deck.title}</h1>
+    <div style={{ padding: 32, maxWidth: 720, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 18, fontWeight: 600, color: '#a1a1aa', marginBottom: 24 }}>{deck.title}</h1>
       <StudySession cards={dueCards} deckId={deckId} />
     </div>
   )
