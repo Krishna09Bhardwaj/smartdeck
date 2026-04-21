@@ -138,9 +138,9 @@ export default async function DeckPage({
           {/* Counters */}
           <div style={{ display: 'flex', gap: 20, marginBottom: 14 }}>
             {[
-              { label: 'Strong', count: strongCount, color: '#22c55e' },
-              { label: 'Fading', count: fadingCount, color: '#f59e0b' },
-              { label: 'At Risk', count: riskCount, color: '#ef4444' },
+              { label: 'Easy', count: strongCount, color: '#22c55e' },
+              { label: 'Hard', count: fadingCount, color: '#f59e0b' },
+              { label: 'Forgot', count: riskCount, color: '#ef4444' },
             ].map(({ label, count, color }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
@@ -170,7 +170,7 @@ export default async function DeckPage({
               }}
             >
               <Play size={12} fill="#ef4444" />
-              Review {riskCount} at-risk card{riskCount === 1 ? '' : 's'} now
+              Review {riskCount} forgotten card{riskCount === 1 ? '' : 's'} now
             </Link>
           )}
         </div>
