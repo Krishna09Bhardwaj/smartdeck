@@ -27,17 +27,19 @@ export default function Nav() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
-  const [email, setEmail] = useState('')
   const [profile, setProfile] = useState<Profile>({ current_xp: 0, total_xp: 0, user_level: 1, current_streak: 0 })
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setEmail(data.user.email ?? '')
-    })
+  const fetchProfile = () => {
     fetch('/api/profile')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setProfile(d) })
       .catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchProfile()
+    window.addEventListener('xp-updated', fetchProfile)
+    return () => window.removeEventListener('xp-updated', fetchProfile)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -61,36 +63,35 @@ export default function Nav() {
       flexShrink: 0,
     }}>
       {/* Logo */}
-      <div style={{ padding: '0 16px 20px' }}>
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+      <div style={{ padding: '0 16px 12px' }}>
+        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', marginBottom: 12 }}>
           <BookMarked size={20} color="#6366f1" />
           <span style={{ fontWeight: 800, fontSize: 18, color: '#ffffff', letterSpacing: '-0.03em' }}>SmartDeck</span>
         </Link>
-        <p style={{ fontSize: 12, color: '#71717a', marginTop: 6, paddingLeft: 28, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {email}
-        </p>
+
+        {/* XP bar — replaces email, updates in real-time after each review */}
+        <div style={{ background: '#1a1a2e', borderRadius: 10, padding: '10px 14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>
+              Level {profile.user_level} learner
+            </span>
+            <span style={{ fontSize: 11, color: '#71717a', fontVariantNumeric: 'tabular-nums' }}>
+              {profile.current_xp} / {xpForLevel} XP
+            </span>
+          </div>
+          <div style={{ height: 6, background: '#2a2a3e', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: `${xpPct}%`,
+              background: 'linear-gradient(90deg, #6366f1, #818cf8)',
+              borderRadius: 999,
+              transition: 'width 600ms ease-out',
+            }} />
+          </div>
+        </div>
       </div>
 
-      {/* XP bar */}
-      <div style={{ margin: '0 12px 20px', background: '#1a1a2e', borderRadius: 10, padding: '10px 14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>
-            Level {profile.user_level} learner
-          </span>
-          <span style={{ fontSize: 11, color: '#71717a', fontVariantNumeric: 'tabular-nums' }}>
-            {profile.current_xp} / {xpForLevel} XP
-          </span>
-        </div>
-        <div style={{ height: 6, background: '#2a2a3e', borderRadius: 999, overflow: 'hidden' }}>
-          <div style={{
-            height: '100%',
-            width: `${xpPct}%`,
-            background: 'linear-gradient(90deg, #6366f1, #818cf8)',
-            borderRadius: 999,
-            transition: 'width 800ms ease-out',
-          }} />
-        </div>
-      </div>
+      <div style={{ marginBottom: 8 }} />
 
       {/* Nav items */}
       <nav style={{ flex: 1, padding: '0 8px' }}>

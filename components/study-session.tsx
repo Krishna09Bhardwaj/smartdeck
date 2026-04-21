@@ -113,6 +113,7 @@ export default function StudySession({ cards, deckId }: StudySessionProps) {
     if (xpEarned > 0) {
       const id = ++toastIdRef.current
       setToasts(t => [...t, { id, amount: xpEarned }])
+      window.dispatchEvent(new CustomEvent('xp-updated'))
     }
 
     const result: SessionResult = { cardId: card.id, quality, xpEarned }
