@@ -37,10 +37,10 @@ export default function DeckCard({ deck, dueCount, masteryPct, index = 0 }: Deck
             cursor: 'pointer',
             transition: 'all 200ms ease',
             transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
-            boxShadow: hovered ? '0 0 0 1px #6366f1, 0 8px 30px rgba(0,0,0,0.4)' : 'none',
+            boxShadow: hovered ? '0 0 0 1px #6366f1, 0 8px 30px rgba(99,102,241,0.15)' : 'none',
           }}
         >
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', marginBottom: 6, lineHeight: 1.3, letterSpacing: '-0.01em' }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', marginBottom: 6, lineHeight: 1.3, letterSpacing: '-0.01em', textTransform: 'capitalize' }}>
             {deck.title}
           </h3>
           {deck.description && (
