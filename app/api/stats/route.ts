@@ -33,14 +33,14 @@ export async function GET() {
   // Daily reviews for heatmap (last 365 days)
   const { data: dailyData } = await supabase
     .from('card_reviews')
-    .select('reviewed_at')
+    .select('updated_at')
     .eq('user_id', user.id)
-    .gte('reviewed_at', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString())
+    .gte('updated_at', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString())
 
   // Group by date
   const dailyMap: Record<string, number> = {}
   for (const row of (dailyData ?? [])) {
-    const date = (row.reviewed_at as string).slice(0, 10)
+    const date = (row.updated_at as string).slice(0, 10)
     dailyMap[date] = (dailyMap[date] ?? 0) + 1
   }
   const daily_reviews = Object.entries(dailyMap).map(([date, count]) => ({ date, count }))

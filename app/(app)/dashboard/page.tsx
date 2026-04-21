@@ -37,18 +37,23 @@ export default async function DashboardPage() {
     (decks ?? []).map(async (deck: Deck) => {
       const dueCount = await getDeckDueCount(deck.id, user.id, supabase)
       const totalCards = deck.card_count
-      const { count: masteredCount } = await supabase
-        .from('card_reviews')
-        .select('card_id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('interval_days', 21)
-        .in('card_id', await supabase
+      let masteryPct = 0
+      if (totalCards > 0) {
+        const { data: cardIds } = await supabase
           .from('cards')
           .select('id')
           .eq('deck_id', deck.id)
-          .then(r => (r.data ?? []).map(c => c.id))
-        )
-      const masteryPct = totalCards > 0 ? Math.round(((masteredCount ?? 0) / totalCards) * 100) : 0
+        const ids = (cardIds ?? []).map((c: { id: string }) => c.id)
+        if (ids.length > 0) {
+          const { count: masteredCount } = await supabase
+            .from('card_reviews')
+            .select('card_id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .gte('interval_days', 21)
+            .in('card_id', ids)
+          masteryPct = Math.round(((masteredCount ?? 0) / totalCards) * 100)
+        }
+      }
       return { deck, dueCount, masteryPct }
     })
   )
