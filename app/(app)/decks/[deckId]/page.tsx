@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Play, Trash2 } from 'lucide-react'
+import { ArrowLeft, Play } from 'lucide-react'
 import DeckCardRow from '@/components/deck-card-row'
+import DeleteDeckButton from '@/components/delete-deck-button'
 
 function computeRetention(updatedAt: string, intervalDays: number): number {
   const daysSince = (Date.now() - new Date(updatedAt).getTime()) / 86400000
@@ -109,27 +110,7 @@ export default async function DeckPage({
               Study ({dueCards.length} due)
             </Link>
           )}
-          <form action={deleteDeck}>
-            <button
-              type="submit"
-              style={{
-                padding: '10px 12px', background: 'transparent',
-                border: '1px solid #2a2a2e', borderRadius: 10,
-                color: '#71717a', cursor: 'pointer', display: 'flex',
-                alignItems: 'center', transition: 'all 200ms ease',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.borderColor = '#ef4444'
-                ;(e.currentTarget as HTMLElement).style.color = '#ef4444'
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2e'
-                ;(e.currentTarget as HTMLElement).style.color = '#71717a'
-              }}
-            >
-              <Trash2 size={15} />
-            </button>
-          </form>
+          <DeleteDeckButton action={deleteDeck} />
         </div>
       </div>
 

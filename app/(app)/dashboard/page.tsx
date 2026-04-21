@@ -190,16 +190,7 @@ export default async function DashboardPage() {
               borderRadius: 16,
               padding: '20px 24px',
               boxShadow: glow,
-              transition: 'all 200ms ease',
               cursor: 'default',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'
-              ;(e.currentTarget as HTMLElement).style.borderColor = '#6366f1'
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-              ;(e.currentTarget as HTMLElement).style.borderColor = '#2a2a2e'
             }}
           >
             <p style={{ fontSize: 13, color: '#71717a', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>
